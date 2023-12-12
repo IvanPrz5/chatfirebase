@@ -1,9 +1,8 @@
 <template>
   <v-app>
-    <v-navigation-drawer v-model="drawer" :rail="rail" permanent @click="rail = false">
-      <v-list-item prepend-avatar="https://cdn.vuetifyjs.com/images/lists/ali.png" 
-        :title="appStore.usuario.nombre + ' ' + appStore.usuario.apPaterno" 
-        :subtitle="appStore.usuario.email" nav>
+    <v-navigation-drawer width="200" v-model="drawer" :rail="rail" permanent @click="rail = false">
+      <v-list-item prepend-avatar="https://cdn.vuetifyjs.com/images/lists/ali.png"
+        :title="appStore.usuario.nombre + ' ' + appStore.usuario.apPaterno" :subtitle="appStore.usuario.email" nav>
         <template v-slot:append>
           <v-btn variant="text" icon="mdi-chevron-left" @click.stop="rail = !rail"></v-btn>
         </template>
@@ -14,25 +13,33 @@
           :subtitle="i.email" @click="seleccionaChat(i)">
         </v-list-item>
       </v-list>
+      <template v-slot:append>
+        <div class="pa-2">
+          <v-list-item prepend-icon="mdi-account-arrow-left" subtitle="Cerrar Sesión" @click="logout()"></v-list-item>
+        </div>
+      </template>
     </v-navigation-drawer>
     <v-main>
       <v-card class="d-flex flex-column fill-height mx-5" :elevation="0">
-        <v-card-text id="prueba" v-if="mensajes.length > 0" style="height: 500px;" class="overflow-y-auto">
-          <div v-for="i in mensajes" :key="i" :class="{
-            'd-flex flex-row-reverse flex-column': i.from == 'maperlbr@gmail.com'
-          }">
-            <v-chip class="mt-2" :color="i.from == 'maperlbr@gmail.com' ? 'success' : 'info'">
+        <v-card-text id="messages" style="height: 500px;">
+          <div v-for="i in mensajes" :key="i" :class="i.from == appStore.usuario.email ? 'd-flex flex-row-reverse flex-column' : 'd-flex'
+            ">
+            <!-- <v-avatar>
+              <v-img v-if="i.from != appStore.usuario.email" src="https://cdn.vuetifyjs.com/images/john.jpg" alt="John"></v-img>
+            </v-avatar> -->
+            <div class="algo mt-2" :class="i.from == appStore.usuario.email ? 'success' : 'info'">
               {{ i.text }}
-            </v-chip>
+            </div>
           </div>
         </v-card-text>
-        <div v-if="objectUser.id != null" style="border-radius: 5px;">
-          <!-- <div class="text-subtitle-1 text-medium-emphasis">Escribe una nota:</div> -->
-          <div class="d-flex">
-            <v-text-field v-model="msj" @keyup.enter="enviarMsj()" density="compact" autofocus placeholder="Escribe un mensaje"></v-text-field>
-            <v-btn size="small" color="success" class="ml-5" icon="mdi-send" @click="enviarMsj()"></v-btn>
-          </div>
-        </div>
+        <v-card-actions v-if="objectUser.id != null" style="border-radius: 5px; margin-top: 15px;">
+          <v-text-field v-model="msj" @keyup.enter="enviarMsj()" density="compact" autofocus
+            placeholder="Escribe un mensaje"></v-text-field>
+        </v-card-actions>
+        <!-- <div v-if="objectUser.id != null" style="border-radius: 5px; margin-top: 15px;">
+          <v-text-field v-model="msj" @keyup.enter="enviarMsj()" density="compact" autofocus
+            placeholder="Escribe un mensaje"></v-text-field>
+        </div> -->
       </v-card>
     </v-main>
   </v-app>
@@ -101,20 +108,20 @@ async function seleccionaChat(item: any) {
     (snapshot) => {
       mensajes.value = snapshot.docs.map((doc) => {
         return { ...doc.data(), id: doc.id };
-      });
+      }).reverse();
     }
   )
 }
 
 async function enviarMsj() {
-    const ref = firestore.collection(database, "chats");
-    await firestore.addDoc(ref, {
-      from: appStore.usuario.email,
-      to: objectUser.value.email,
-      text: msj.value,
-      timestamp: firestore.serverTimestamp(),
-      sala: appStore.usuario.email + objectUser.value.email
-    })
+  const ref = firestore.collection(database, "chats");
+  await firestore.addDoc(ref, {
+    from: appStore.usuario.email,
+    to: objectUser.value.email,
+    text: msj.value,
+    timestamp: firestore.serverTimestamp(),
+    sala: appStore.usuario.email + objectUser.value.email
+  })
     .then(() => {
       msj.value = "";
     })
@@ -122,4 +129,36 @@ async function enviarMsj() {
       console.log(e);
     });
 }
+
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuario");
+  appStore.token = "";
+  router.push({ path: "/login" });
+}
 </script>
+
+<style>
+#messages {
+  display: flex;
+  flex-direction: column-reverse;
+  height: 100px;
+  overflow-y: scroll;
+}
+
+.success {
+  max-width: 60%;
+  padding: 10px;
+  background-color: #2196F3;
+  color: #fff;
+	border-radius: 1.125rem 1.125rem 0 1.125rem;
+}
+
+.info {
+  max-width: 60%;
+  padding: 10px;
+  background-color: #b1afb6;
+  color: #fff;
+	border-radius: 1.125rem 1.125rem 1.125rem 0;
+}
+</style>

@@ -63,6 +63,7 @@ async function login() {
     console.log(error)
   }
 }
+
 function register() {
   router.push({ path: "/register" });
 }
