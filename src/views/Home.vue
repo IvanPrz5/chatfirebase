@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer width="200" v-model="drawer" :rail="rail" permanent @click="rail = false">
+    <v-navigation-drawer width="210" class="drawer" v-model="drawer" :rail="rail" permanent @click="rail = false">
       <v-list-item prepend-avatar="https://cdn.vuetifyjs.com/images/lists/ali.png"
         :title="appStore.usuario.nombre + ' ' + appStore.usuario.apPaterno" :subtitle="appStore.usuario.email" nav>
         <template v-slot:append>
@@ -9,7 +9,7 @@
       </v-list-item>
       <v-divider></v-divider>
       <v-list v-for="i in arrayUsers" :key="i" density="compact" nav>
-        <v-list-item prepend-avatar="https://cdn.vuetifyjs.com/images/john.jpg" :title="i.nombre" value="home"
+        <v-list-item :prepend-avatar="i.image" :title="i.nombre"
           :subtitle="i.email" @click="seleccionaChat(i)">
         </v-list-item>
       </v-list>
@@ -19,14 +19,11 @@
         </div>
       </template>
     </v-navigation-drawer>
-    <v-main>
+    <v-main @click="rail = true">
       <v-card class="d-flex flex-column fill-height mx-5" :elevation="0">
         <v-card-text id="messages" style="height: 500px;">
           <div v-for="i in mensajes" :key="i" :class="i.from == appStore.usuario.email ? 'd-flex flex-row-reverse flex-column' : 'd-flex'
             ">
-            <!-- <v-avatar>
-              <v-img v-if="i.from != appStore.usuario.email" src="https://cdn.vuetifyjs.com/images/john.jpg" alt="John"></v-img>
-            </v-avatar> -->
             <div class="algo mt-2" :class="i.from == appStore.usuario.email ? 'success' : 'info'">
               {{ i.text }}
             </div>
@@ -36,10 +33,6 @@
           <v-text-field v-model="msj" @keyup.enter="enviarMsj()" density="compact" autofocus
             placeholder="Escribe un mensaje"></v-text-field>
         </v-card-actions>
-        <!-- <div v-if="objectUser.id != null" style="border-radius: 5px; margin-top: 15px;">
-          <v-text-field v-model="msj" @keyup.enter="enviarMsj()" density="compact" autofocus
-            placeholder="Escribe un mensaje"></v-text-field>
-        </div> -->
       </v-card>
     </v-main>
   </v-app>
@@ -51,6 +44,8 @@ import { useRouter } from "vue-router";
 import { storeApp } from '@/store/app';
 import { database } from "../firebaseconfig";
 import * as firestore from "firebase/firestore";
+import * as firestorage from "firebase/storage";
+import { FirebaseError } from "firebase/app";
 
 const appStore = storeApp();
 let drawer: any = ref(true);
@@ -60,30 +55,30 @@ let arrayUsers: any = ref([]);
 let mensajes: any = ref([]);
 let msj: any = ref();
 let objectUser: any = ref({});
+let archivo: any = ref([]);
 
 onBeforeMount(() => {
   const token = localStorage.getItem("token");
   if (token != null) {
     let user: any = localStorage.getItem("usuario");
     appStore.usuario = JSON.parse(user);
+    appStore.token = localStorage.getItem("token") as any;
   } else {
     router.push({ path: "/login" });
   }
-})
+});
 
 onMounted(() => {
   getUsuarios()
-})
+});
 
 async function getUsuarios() {
   try {
-    console.log(appStore.usuario.email)
     const collec = firestore.collection(database, "usuarios")
     const q = firestore.query(collec,
       firestore.where("email", "!=", appStore.usuario.email),
       firestore.where("status", "==", true));
     const snapQuery = await firestore.getDocs(q);
-
     snapQuery.forEach((doc) => {
       arrayUsers.value.push({ ...doc.data(), id: doc.id })
     });
@@ -136,6 +131,22 @@ function logout() {
   appStore.token = "";
   router.push({ path: "/login" });
 }
+
+async function subirArchivo(){
+  // console.log(archivo.value);
+  const storage = firestorage.getStorage();
+  const storageRef = firestorage.ref(storage, 'usuarios/' + archivo.value[0].name);
+  const metadata = {
+  contentType: 'image/jpeg',
+};
+  const uploadTask = firestorage.uploadBytes(storageRef, archivo.value, metadata);
+  // (await uploadTask).ref.fullPath
+  // console.log(appStore.token)
+  // const usuariosRef = firestore.doc(database, "usuarios", appStore.token);
+  /* await firestore.updateDoc(usuariosRef, {
+    image: "HOLAMUNDO"
+  }) */
+}
 </script>
 
 <style>
@@ -160,5 +171,9 @@ function logout() {
   background-color: #b1afb6;
   color: #fff;
 	border-radius: 1.125rem 1.125rem 1.125rem 0;
+}
+
+.navigation-drawer-border-width{
+  width: 450px;
 }
 </style>

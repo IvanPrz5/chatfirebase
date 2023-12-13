@@ -2,7 +2,7 @@
   <v-container>
     <v-img class="mx-auto my-10" max-width="250"
       src="https://cdn.vuetifyjs.com/docs/images/logos/vuetify-logo-v3-slim-text-light.svg"></v-img>
-    <v-card class="mx-auto pa-12 pb-8" elevation="8" max-width="448" rounded="lg">
+    <v-card class="mx-auto pa-12 pb-8" elevation="0" max-width="448" rounded="lg">
       <v-form ref="formRegister" fast-fail @submit.prevent>
         <v-row no-gutters>
           <v-col cols="12" class="mb-3">
@@ -65,7 +65,7 @@ let usuario: any = ref({
   apPaterno: "",
   email: "",
   password: "",
-  image: "imagen",
+  image: "https://cdn.vuetifyjs.com/images/john.jpg",
   status: true
 });
 
